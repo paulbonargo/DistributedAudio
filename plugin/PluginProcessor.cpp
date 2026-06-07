@@ -46,7 +46,7 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 
 juce::AudioProcessorEditor* AudioSenderProcessor::createEditor()
 {
-	
+	return new AudioSenderEditor(*this);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
