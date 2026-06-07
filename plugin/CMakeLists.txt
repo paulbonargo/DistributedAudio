@@ -1,6 +1,6 @@
 juce_add_plugin(AudioSenderPlugin
     PLUGIN_MANUFACTURER_CODE DIST
-    PLUGIN_CODE SENDv1
+    PLUGIN_CODE SEND
     FORMATS VST3 Standalone
     PRODUCT_NAME "Distributed Audio Sender"
     COMPANY_NAME "Paul Bonargo"
