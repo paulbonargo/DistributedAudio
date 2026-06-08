@@ -8,6 +8,7 @@
 
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "SenderThread.h"
 
 //==============================================================================
 /**
@@ -15,13 +16,14 @@
 
 class AudioSenderProcessor : public juce::AudioProcessor
 {
+
 public:
     AudioSenderProcessor();
     ~AudioSenderProcessor() override = default;
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
 
-    void releaseResources() override {}
+    void releaseResources() override;
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
@@ -49,5 +51,6 @@ public:
     void setStateInformation(const void*, int) override {}
 
 private:
+	SenderThread senderThread;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioSenderProcessor)
 };
