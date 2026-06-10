@@ -40,7 +40,7 @@ class SenderThread : public juce::Thread
 
         static constexpr int kDestinationPort = 9000;
 
-        // localhost for LAN testing
+        // localhost for LAN testing - change to endpoint's address 
         const juce::String destinationHost = "127.0.0.1";
 
 		juce::AbstractFifo fifo{ kFifoCapacityFrames };
