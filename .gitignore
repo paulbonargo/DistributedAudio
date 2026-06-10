@@ -4,3 +4,4 @@ out/
 *.vst3
 *.o
 *.obj
+test/
