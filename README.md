@@ -1,8 +1,9 @@
 Author: Paul Bonargo Jr.
 
 Current Status: Plugin builds successfully and passes audio through in a DAW (Ableton 12 Standard Edition)
-				Just set up SenderThread skeleton
+				Implemented SenderThread - except for run() - current one is for local testing with DBG
+				Implemented more of distributed audio packet header and plugin processor logic
 
-Up next: Continue Implementing Buffer Processing for Sending Audio Data Packets to Receiver
-		 Implement rough python script for receiver to validate first milestone
+Up next: Packetize audio and send over UDP
+		 Implement rough python script for receiver to fully validate first milestone
 		 Confirm plugin sends out audio data packets to a receiver

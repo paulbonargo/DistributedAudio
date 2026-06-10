@@ -19,7 +19,9 @@ AudioSenderProcessor::AudioSenderProcessor() : juce::AudioProcessor(BusesPropert
 
 void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
 {
-	senderThread.startThread();
+    senderThread.stopThread(2000);
+	senderThread.prepare(sampleRate, getTotalNumInputChannels());
+    senderThread.startThread();
 }
 
 bool AudioSenderProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -40,8 +42,7 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
     for (int channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
 		buffer.clear(channel, 0, buffer.getNumSamples());
 
-    // networking code to send audio data to receiver will be added here
-
+	senderThread.pushAudio(buffer, getTotalNumInputChannels());
 }
 
 void AudioSenderProcessor::releaseResources()

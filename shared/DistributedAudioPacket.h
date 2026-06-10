@@ -35,6 +35,13 @@ namespace DistributedAudio
 		uint64_t sequenceNumber;
 	};
 
-	// reset padding
+	// restores padding
 	#pragma pack(pop)
+
+	static_assert(sizeof(PacketHeader) == 24, "Packet header must be 24 bytes");
+
+	// can adjust based on network MTU, but 128 frames at 32 bit float * 2 channel is
+	// 1024 bytes + 24 byte header = 1048 bytes, which is under typical MTU of 1500
+	constexpr int kFramesPerPacket = 128;
+
 }
