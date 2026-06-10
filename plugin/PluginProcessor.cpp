@@ -19,6 +19,8 @@ AudioSenderProcessor::AudioSenderProcessor() : juce::AudioProcessor(BusesPropert
 
 void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
 {
+	juce::ignoreUnused(samplesPerBlock);
+
     senderThread.stopThread(2000);
 	senderThread.prepare(sampleRate, getTotalNumInputChannels());
     senderThread.startThread();

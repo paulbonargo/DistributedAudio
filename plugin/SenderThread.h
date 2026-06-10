@@ -46,7 +46,7 @@ class SenderThread : public juce::Thread
 		juce::AbstractFifo fifo{ kFifoCapacityFrames };
         
         std::vector<float> ringBuffer; // interleaved audio data buffer for FIFO storage
-        std::vector<uint32_t> packetBuffer; // header + packet payload
+        std::vector<uint8_t> packetBuffer; // header + packet payload
 
         uint32_t sampleRate = 0;
 		int numChannels = 0;
