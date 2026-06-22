@@ -35,13 +35,13 @@ class SenderThread : public juce::Thread
 
     private:
 
-        // about 340 ms headroom, can adjust as needed
+        // about 340 ms headroom for initial parameter setup, can adjust as needed
 		static constexpr int kFifoCapacityFrames = 16384;
 
-        static constexpr int kDestinationPort = 9000;
+        static constexpr int kDestinationPort = 9000; // TODO : make this configurable
 
         // localhost for LAN testing - change to endpoint's address 
-        const juce::String destinationHost = "127.0.0.1";
+        const juce::String destinationHost = "127.0.0.1"; // TODO : make this configurable
 
 		juce::AbstractFifo fifo{ kFifoCapacityFrames };
         

@@ -13,7 +13,9 @@ juce_generate_juce_header(AudioSenderPlugin)
 target_sources(AudioSenderPlugin PRIVATE
     PluginProcessor.cpp
     PluginEditor.cpp 
-    SenderThread.cpp)
+    SenderThread.cpp 
+    PlaybackBuffer.cpp
+)
 
 target_include_directories(AudioSenderPlugin PRIVATE ${CMAKE_SOURCE_DIR}/shared)
 

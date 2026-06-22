@@ -2,9 +2,9 @@
 Distributed Audio UDP Receiver
 
 Listens for packets from the AudioSenderPlugin, validates them against the
-milestone 1 (DistributedAudio v1) format, tracks sequence gaps as the packet-loss 
-metric, and writes the received float32 PCM -> 16-bit WAV on Ctrl+C (or after 
---idle-timeout seconds of silence once audio has been received).
+milestone 3 (DistributedAudio v2) format and writes the received 
+float32 PCM -> 16-bit WAV on Ctrl+C (or after --idle-timeout seconds of 
+silence once audio has been received).
 
 Milestone 1 packet format (header):
     uint32_t signature      0x44495354  "DIST" in ASCII
@@ -15,7 +15,12 @@ Milestone 1 packet format (header):
     uint32_t sampleRate
     uint32_t numSamples     samples aka frames in the packet
 
-    uint64_t sequenceNumber packet sequence number for loss tracking
+    uint64_t sequenceNumber
+    uint64_t startSample
+
+	uint8_t flags           bit 0 is kFlagProcessed
+
+	uint8_t reserved[3];
 """
 
 import argparse
@@ -25,7 +30,7 @@ import array
 import sys
 import wave
 
-HEADER = struct.Struct('<IHHIIQ')
+HEADER = struct.Struct('<IHHIIQB3s') # Q startSample + B flags + 3s reserved = 36 bytes
 SIGNATURE = 0x44495354 # "DIST" in ASCII
 VERSION = 1
 
@@ -99,7 +104,7 @@ def main():
                 bad += 1
                 continue
 
-            sig, ver, n_ch, rate, n_samples, seq = HEADER.unpack_from(data)
+            sig, ver, n_ch, rate, n_samples, seq, start_sample, flags, _reserved = HEADER.unpack_from(data)
             payload = data[HEADER.size:]
 
             if sig != SIGNATURE or ver != VERSION:

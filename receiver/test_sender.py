@@ -12,9 +12,9 @@ import socket
 import struct
 import time
 
-HEADER = struct.Struct('<IHHIIQ')
+HEADER = struct.Struct('<IHHIIQB3s') # Q startSample + B flags + 3s reserved = 36 bytes
 SIGNATURE = 0x44495354 # "DIST" in ASCII
-VERSION = 1
+VERSION = 2
 FRAMES_PER_PACKET = 128
 
 def main():
@@ -62,7 +62,7 @@ def main():
             sample = 0.5 * math.sin(2.0 * math.pi * 440 * (frame0 + i) / args.rate) # 440 Hz sine wave
             samples.extend([sample] * args.channels) # interleaved 
 
-        packet = HEADER.pack(SIGNATURE, VERSION, args.channels, args.rate, FRAMES_PER_PACKET, seq) 
+        packet = HEADER.pack(SIGNATURE, VERSION, args.channels, args.rate, FRAMES_PER_PACKET, seq, seq*FRAMES_PER_PACKET, 0, b"\x00x\x00\x00") 
         packet += struct.pack(f"<{len(samples)}f", *samples)
 
         if args.drop > 0 and seq % args.drop == args.drop - 1:
