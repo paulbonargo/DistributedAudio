@@ -16,6 +16,7 @@ target_sources(AudioSenderPlugin PRIVATE
     SenderThread.cpp 
     PlaybackBuffer.cpp
     DryDelay.cpp
+    ReceiverThread.cpp
 )
 
 target_include_directories(AudioSenderPlugin PRIVATE ${CMAKE_SOURCE_DIR}/shared)

@@ -55,5 +55,5 @@ namespace DistributedAudio
 
 	// ports for Milestone 2
 	constexpr int kNodeAudioPort = 9000; // remote node
-	constexpr int kHostAudioPort = 9000; // host machine
+	constexpr int kHostAudioPort = 9001; // host machine
 }
