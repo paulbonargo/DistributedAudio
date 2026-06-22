@@ -37,12 +37,16 @@ void SenderThread::prepare(double newSampleRate, int newNumChannels)
 
 	fifo.reset();
 	sequenceNumber = 0;
+	framesSentTotal = 0;
+
+	baseSample.store(0, std::memory_order_relaxed);
+	haveBase.store(false, std::memory_order_release);
 
 	packetsSent.store(0, std::memory_order_relaxed);
 	framesDropped.store(0, std::memory_order_relaxed);
 }
 
-void SenderThread::pushAudio(const juce::AudioBuffer<float>& buffer, int channelsToSend)
+void SenderThread::pushAudio(const juce::AudioBuffer<float>& buffer, int channelsToSend, uint64_t blockStartSample)
 {
 	const int numFrames = buffer.getNumSamples();
 	const int srcChannels = juce::jmin(channelsToSend, numChannels);
@@ -54,19 +58,25 @@ void SenderThread::pushAudio(const juce::AudioBuffer<float>& buffer, int channel
 		return;
 	}
 
+	if (!haveBase.load(std::memory_order_acquire))
+	{
+		baseSample.store(blockStartSample, std::memory_order_relaxed);
+		haveBase.store(true, std::memory_order_release);
+	}
+
 	int start1, size1, start2, size2;
 	fifo.prepareToWrite(numFrames, start1, size1, start2, size2);
 
-	auto writeRegion = [&](int ringStart, int regionSize, int srcOffset)
+	auto writeRegion = [&] (int ringStart, int regionSize, int srcOffset)
 	{
-		for (int ch = 0; ch < numChannels; ++ch)
+		for (int channel = 0; channel < numChannels; ++channel)
 		{
-			const float* src = ch < srcChannels ? buffer.getReadPointer(ch) + srcOffset : nullptr;
-			float* dst = ringBuffer.data() + (size_t)ringStart * (size_t)numChannels + (size_t)ch;
+			const float* src = channel < srcChannels ? buffer.getReadPointer(channel) + srcOffset : nullptr;
+			float* dst = ringBuffer.data() + (size_t) ringStart * (size_t) numChannels + (size_t) channel;
 
 			for (int i = 0; i < regionSize; ++i)
 			{
-				dst[(size_t)i * (size_t)numChannels] = (src != nullptr ? src[i] : 0.0f);
+				dst[(size_t) i * (size_t) numChannels] = (src != nullptr ? src[i] : 0.0f);
 			}
 		}
 	};
@@ -108,6 +118,8 @@ void SenderThread::run()
 		header.numSamples =  framesThisPacket;
 
 		header.sequenceNumber = sequenceNumber;
+		header.startSample = baseSample.load(std::memory_order_relaxed) + framesSentTotal;
+		header.flags = 0;
 
 		std::memcpy(packetBuffer.data(), &header, headerSize);
 
@@ -122,9 +134,10 @@ void SenderThread::run()
 		fifo.finishedRead((int)framesThisPacket);
 		const int packetBytes = (int)(headerSize + bytes1 + bytes2);
 		
-		if (socket.write(destinationHost, kDestinationPort, packetBuffer.data(), packetBytes) == packetBytes)
+		if (socket.write(destinationHost, DistributedAudio::kNodeAudioPort, packetBuffer.data(), packetBytes) == packetBytes)
 		{
-			sequenceNumber++;
+			++sequenceNumber;
+			framesSentTotal += framesThisPacket;
 			packetsSent.fetch_add(1, std::memory_order_relaxed);
 		}
 	}

@@ -19,6 +19,8 @@ namespace DistributedAudio
 	constexpr uint32_t kProtocolSignature = 0x44495354; 
 	constexpr uint16_t kProtocolVersion = 2;
 
+	constexpr uint8_t  kFlagProcessed = 0x01; // packets returning from node
+
 	// no padding
 	#pragma pack(push, 1) 
 

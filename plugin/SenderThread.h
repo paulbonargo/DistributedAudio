@@ -26,7 +26,7 @@ class SenderThread : public juce::Thread
 
 		void prepare(double sampleRate, int numChannels);
 
-		void pushAudio(const juce::AudioBuffer<float>& buffer, int channelsToSend);
+		void pushAudio(const juce::AudioBuffer<float>& buffer, int channelsToSend, uint64_t blockStartSample);
 
         void run() override;
 
@@ -37,8 +37,6 @@ class SenderThread : public juce::Thread
 
         // about 340 ms headroom for initial parameter setup, can adjust as needed
 		static constexpr int kFifoCapacityFrames = 16384;
-
-        static constexpr int kDestinationPort = 9000; // TODO : make this configurable
 
         // localhost for LAN testing - change to endpoint's address 
         const juce::String destinationHost = "127.0.0.1"; // TODO : make this configurable
@@ -51,6 +49,10 @@ class SenderThread : public juce::Thread
         uint32_t sampleRate = 0;
 		int numChannels = 0;
 		uint64_t sequenceNumber = 0; // run() modifies
+
+        std::atomic<uint64_t> baseSample{ 0 };  // play position of first accepted frame
+        std::atomic<bool> haveBase{ false };
+        uint64_t framesSentTotal = 0; // run() modifies
 
         std::atomic<uint64_t> packetsSent{ 0 };
         std::atomic<uint64_t> framesDropped{ 0 };
