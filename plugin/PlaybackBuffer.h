@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    PlaybackBuffer offers position-indexed store for processed audio returned 
+    PlaybackBuffer includes position-indexed store for processed audio returned 
     from the node. Producer: ReceiverThread, Consumer: audio thread 
     [firstSample, firstSample + frames]
 
