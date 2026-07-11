@@ -3,6 +3,8 @@ Synthetic packet generator for testing receiver.py without a DAW
 
 Sends a 440 Hz sine wave in DistributedAudio v1 packetsat roughly 
 real-time pacing. --drop N skips every Nth packet to simulate packet loss.
+
+OUT-OF-DATE NOW: WITH V2+
 """
 
 import argparse

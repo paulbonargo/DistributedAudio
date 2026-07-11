@@ -53,7 +53,10 @@ namespace DistributedAudio
 	// 1024 bytes + 24 byte header = 1048 bytes, which is under typical MTU of 1500
 	constexpr int kFramesPerPacket = 128;
 
-	// ports for Milestone 2
+	// ports for UDP
 	constexpr int kNodeAudioPort = 9000; // remote node
 	constexpr int kHostAudioPort = 9001; // host machine
+
+	// port for TCP
+	constexpr int kControlPort = 9100;
 }

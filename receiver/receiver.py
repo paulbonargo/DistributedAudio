@@ -21,6 +21,8 @@ Milestone 1 packet format (header):
 	uint8_t flags           bit 0 is kFlagProcessed
 
 	uint8_t reserved[3];
+ 
+OUT-OF-DATE NOW: WITH V2+
 """
 
 import argparse
