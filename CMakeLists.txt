@@ -6,4 +6,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(JUCE)
 add_subdirectory(plugin)
-# add_subdirectory(receiver)
+add_subdirectory(node)

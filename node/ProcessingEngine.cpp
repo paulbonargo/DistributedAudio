@@ -28,7 +28,7 @@ void ProcessingEngine::prepare(double newSampleRate)
     jassert(!isThreadRunning());
     sampleRate = newSampleRate;
 
-    rxBuffer.assign(sizeof(DistributedAudio::PacketHeader) + (size_t) DistributedAudio::kFramesPerPacket + 2 * sizeof(float), 0);
+    rxBuffer.assign(sizeof(DistributedAudio::PacketHeader) * (size_t) DistributedAudio::kFramesPerPacket + 2 * sizeof(float), 0);
     packetsProcessed.store(0, std::memory_order_relaxed);
 }
 

@@ -1,4 +1,4 @@
-juce_add_plugin(ProcessingNode
+juce_add_gui_app(ProcessingNode
     PRODUCT_NAME "Distributed Audio Processing Node"
     COMPANY_NAME "Paul Bonargo")
 
