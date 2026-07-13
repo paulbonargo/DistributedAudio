@@ -14,6 +14,7 @@
 #include "ReceiverThread.h"
 #include "PlaybackBuffer.h"
 #include "DryDelay.h"
+#include "ControlClient.h"
 
 //==============================================================================
 /**
@@ -28,12 +29,17 @@ public:
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
 
+    ControlClient& getControlClient() noexcept { return controlClient; }
+    const ControlClient& getControlClient() const noexcept { return controlClient; }
+    void setRemoteLatency(int hostPluginLatencySamples);
+    void connectControl(const juce::String& host);
+
     void releaseResources() override;
 
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-
+    
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
@@ -60,6 +66,7 @@ public:
     uint64_t getPacketsSent() const noexcept { return senderThread.getPacketsSent(); }
     uint64_t getPacketsReceived() const noexcept { return receiverThread.getPacketsReceived(); }
 
+
 private:
     void timerCallback() override; // temporary - logs counters until later milestone editor shows them
 
@@ -70,6 +77,11 @@ private:
     PlaybackBuffer playbackBuffer;
     ReceiverThread receiverThread{ playbackBuffer };
     DryDelay dryDelay;
+
+    ControlClient controlClient { *this };
+    double lastSampleRate = 48000.0; // default project sample value
+    int lastBlockFrames = 0;
+    juce::String lastNodeHost = "127.0.0.1";
 
     std::vector<float> scratchInterleaved; // audio-thread scratch: maxBlock * channels, 
     uint64_t freeRunningPos = 0; // fallback timeline when host gives no playhead

@@ -86,6 +86,12 @@ void SenderThread::pushAudio(const juce::AudioBuffer<float>& buffer, int channel
 	fifo.finishedWrite(size1 + size2);
 }
 
+void SenderThread::setDestinationHost(const juce::String& host)
+{
+	const juce::ScopedLock sl(destLock);
+	destinationHost = host;
+}
+
 void SenderThread::run()
 {
 	juce::DatagramSocket socket;
@@ -134,7 +140,14 @@ void SenderThread::run()
 		fifo.finishedRead((int)framesThisPacket);
 		const int packetBytes = (int)(headerSize + bytes1 + bytes2);
 		
-		if (socket.write(destinationHost, DistributedAudio::kNodeAudioPort, packetBuffer.data(), packetBytes) == packetBytes)
+		juce::String dest;
+		
+		{
+			const juce::ScopedLock sl(destLock);
+			dest = destinationHost;
+		}
+
+		if (socket.write(dest, DistributedAudio::kNodeAudioPort, packetBuffer.data(), packetBytes) == packetBytes)
 		{
 			++sequenceNumber;
 			framesSentTotal += framesThisPacket;

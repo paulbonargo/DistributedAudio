@@ -28,6 +28,8 @@ class SenderThread : public juce::Thread
 
 		void pushAudio(const juce::AudioBuffer<float>& buffer, int channelsToSend, uint64_t blockStartSample);
 
+        void setDestinationHost(const juce::String& host);
+
         void run() override;
 
         uint64_t getPacketsSent() const noexcept { return packetsSent.load(std::memory_order_relaxed); }
@@ -38,8 +40,10 @@ class SenderThread : public juce::Thread
         // about 340 ms headroom for initial parameter setup, can adjust as needed
 		static constexpr int kFifoCapacityFrames = 16384;
 
-        // localhost for LAN testing - change to endpoint's address 
-        const juce::String destinationHost = "127.0.0.1"; // TODO : make this configurable
+        juce::CriticalSection destLock;
+
+        // default - loopback , overwrites at runtime on connect
+        juce::String destinationHost = "127.0.0.1"; 
 
 		juce::AbstractFifo fifo{ kFifoCapacityFrames };
         

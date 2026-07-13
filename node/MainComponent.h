@@ -9,6 +9,7 @@
 #pragma once
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "ProcessingEngine.h"
+#include "ControlServer.h"
 
 //==============================================================================
 /**
@@ -26,6 +27,8 @@ class MainComponent : public juce::Component, private juce::Timer
     private:
         void timerCallback() override;
         ProcessingEngine engine;
+
+        ControlServer control;
 
         // default sample rate for project
         double sessionSampleRate = 48000.0;

@@ -47,6 +47,28 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     receiverThread.prepare(numChannels);
     senderThread.startThread();
     receiverThread.startThread();
+
+    lastSampleRate = sampleRate;
+    lastBlockFrames = samplesPerBlock;
+
+    // TODO : REMOVE - TEMP for local testing
+    connectControl("127.0.0.1");
+}
+
+void AudioSenderProcessor::setRemoteLatency(int hostedPluginLatencySaples)
+{
+    const int total = juce::jlimit(kBaseLatencySamples, kMaxLatencySamples, kBaseLatencySamples + juce::jmax(0, hostedPluginLatencySaples));
+
+    currentLatencySamples.store(total, std::memory_order_relaxed);
+    setLatencySamples(total);
+    updateHostDisplay();
+}
+
+void AudioSenderProcessor::connectControl(const juce::String& host)
+{
+    lastNodeHost = host;
+    senderThread.setDestinationHost(host);
+    controlClient.start(host, lastSampleRate, lastBlockFrames);
 }
 
 bool AudioSenderProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const

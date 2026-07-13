@@ -25,6 +25,36 @@ MainComponent::MainComponent()
     engine.prepare(sessionSampleRate);
     engine.startThread();
 
+    control.onHello = [this](double sr, int)
+    {
+        sessionSampleRate = sr;
+    };
+
+    control.buildPluginList = []() -> juce::var
+    {
+        juce::Array<juce::var> arr;
+        juce::DynamicObject::Ptr p = new juce::DynamicObject();
+        
+        p -> setProperty("id", 0); p->setProperty("name", "(echo - no plugin yet)"); 
+        p -> setProperty("format", "none");
+
+        arr.add(juce::var(p.get()));
+        return arr;
+    };
+
+    control.onSelectPlugin = [](int) -> juce::var
+    {
+        juce::DynamicObject::Ptr e = new juce::DynamicObject();
+        
+        e->setProperty("type", "ERROR"); 
+        e->setProperty("message", "hosting not implemented yet");
+        
+        return juce::var(e.get());
+    };
+
+    control.onSetParam = [](int, float) {}; 
+    control.start();
+
     setSize(440,220);
     startTimerHz(4);
 }
@@ -51,5 +81,5 @@ void MainComponent::resized()
 
 void MainComponent::timerCallback()
 {
-    statusLabel.setText("Audio in: UDP" + juce::String(DistributedAudio::kNodeAudioPort) + "\nPackets processed: " + juce::String(engine.getPacketsProcessed()) + "\nMode: echo (no plugin loaded)", juce::dontSendNotification);
+    statusLabel.setText("Audio in: UDP " + juce::String(DistributedAudio::kNodeAudioPort) + "\nPackets processed: " + juce::String(engine.getPacketsProcessed()) + "\nMode: echo (no plugin loaded)", juce::dontSendNotification);
 }

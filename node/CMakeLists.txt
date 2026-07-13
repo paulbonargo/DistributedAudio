@@ -8,6 +8,7 @@ target_sources(ProcessingNode PRIVATE
     Main.cpp
     MainComponent.cpp 
     ProcessingEngine.cpp 
+    ControlServer.cpp 
 )
 
 target_include_directories(ProcessingNode PRIVATE ${CMAKE_SOURCE_DIR}/shared)
