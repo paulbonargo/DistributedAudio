@@ -14,7 +14,7 @@
 
 PluginHost::PluginHost() 
 {
-    formatManager.addDefaultFormats();
+    juce::addDefaultFormatsToManager(formatManager);
 }
 
 bool PluginHost::load(const juce::File& vst3Path, double sampleRate, int blockSize, juce::String& error)

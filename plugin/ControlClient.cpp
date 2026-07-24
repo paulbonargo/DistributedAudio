@@ -93,6 +93,7 @@ void ControlClient::messageReceived(const juce::MemoryBlock& message)
     const juce::String type = msg["type"].toString();
 
     if (type == "PLUGIN_LIST")
+    {
         const juce::ScopedLock sl(stateLock);
         pluginList.clear();
 
@@ -102,7 +103,13 @@ void ControlClient::messageReceived(const juce::MemoryBlock& message)
             {
                 pluginList.push_back({ (int) p["id"], p["name"].toString(), p["format"].toString() });
             }
-        } 
+        }
+
+        // TEMPORARY : auto-select the first plugin once the node's list arrives
+        if (! getPluginList().empty() && getSelectedPluginName().isEmpty())
+            selectPlugin(getPluginList().front().id);
+
+    }
     else if (type == "PLUGIN_SELECTED")
     {
         {
@@ -117,7 +124,7 @@ void ControlClient::messageReceived(const juce::MemoryBlock& message)
                 }
             }
         }
-        processor.setRemoteLatency((int) msg["latancySamples"]);
+        processor.setRemoteLatency((int) msg["latencySamples"]);
     }
     else if (type == "ERROR")
     {
