@@ -10,6 +10,8 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "ProcessingEngine.h"
 #include "ControlServer.h"
+#include "PluginRegistry.h"
+#include "PluginHost.h"
 
 //==============================================================================
 /**
@@ -24,16 +26,23 @@ class MainComponent : public juce::Component, private juce::Timer
         void paint(juce::Graphics&) override;
         void resized() override;
 
-    private:
+        
+        private:
         void timerCallback() override;
         ProcessingEngine engine;
-
+        
         ControlServer control;
-
+        
         // default sample rate for project
         double sessionSampleRate = 48000.0;
-
+        
         juce::Label titleLabel, statusLabel;
 
+        PluginRegistry registry;
+        std::unique_ptr<PluginHost> host;
+
+        juce::var buildPluginListVar();
+        juce::var selectPlugin(int id);
+        
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

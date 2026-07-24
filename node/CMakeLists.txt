@@ -1,6 +1,7 @@
 juce_add_gui_app(ProcessingNode
     PRODUCT_NAME "Distributed Audio Processing Node"
-    COMPANY_NAME "Paul Bonargo")
+    COMPANY_NAME "Paul Bonargo"
+    BUNDLE_ID com.paulbonargo.processingnode)
 
 juce_generate_juce_header(ProcessingNode)
 
@@ -9,6 +10,8 @@ target_sources(ProcessingNode PRIVATE
     MainComponent.cpp 
     ProcessingEngine.cpp 
     ControlServer.cpp 
+    PluginRegistry.cpp
+    PluginHost.cpp
 )
 
 target_include_directories(ProcessingNode PRIVATE ${CMAKE_SOURCE_DIR}/shared)
@@ -17,7 +20,7 @@ target_compile_definitions(ProcessingNode PRIVATE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_PLUGINHOST_VST3=1
-    JUCEPLUGINHOST_AU=0)
+    JUCE_PLUGINHOST_AU=0)
 
 target_link_libraries(ProcessingNode PRIVATE
     juce::juce_audio_utils
