@@ -95,12 +95,17 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
     // absolute timeline position of block
     uint64_t blockStart = freeRunningPos;
 
+    /*
     if (auto* ph = getPlayHead())
-        if (auto pos = ph->getPosition())
-            if (auto s = pos->getTimeInSamples())
-                blockStart = (uint64_t)juce::jmax((int64_t)0, *s);
-
+        if (auto pos = ph -> getPosition())
+            if (pos -> getIsPlaying())
+                if (auto s = pos -> getTimeInSamples())
+                    blockStart = (uint64_t)juce::jmax((int64_t)0, *s);
+                    
     freeRunningPos = blockStart + (uint64_t) numSamples;
+    */
+
+    freeRunningPos += (uint64_t) numSamples;
 
     // ship dry input to the node and retain it for underrun fallback
     senderThread.pushAudio(buffer, numChannels, blockStart);

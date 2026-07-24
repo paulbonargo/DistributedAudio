@@ -60,6 +60,7 @@ void ProcessingEngine::drainParameterChanges(PluginHost& host)
 
 void ProcessingEngine::run()
 {
+    juce::ScopedNoDenormals noDenormals;
     juce::DatagramSocket rx, tx;
 
     if (!rx.bindToPort(DistributedAudio::kNodeAudioPort))

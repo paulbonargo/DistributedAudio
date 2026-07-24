@@ -105,7 +105,7 @@ void ControlClient::messageReceived(const juce::MemoryBlock& message)
             }
         }
 
-        // TEMPORARY : auto-select the first plugin once the node's list arrives
+        // TODO - TEMPORARY : auto-select the first plugin once the node's list arrives
         if (! getPluginList().empty() && getSelectedPluginName().isEmpty())
             selectPlugin(getPluginList().front().id);
 
