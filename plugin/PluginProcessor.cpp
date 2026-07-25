@@ -52,7 +52,7 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     lastBlockFrames = samplesPerBlock;
 
     // TODO : REMOVE - TEMP for local testing
-    connectControl("127.0.0.1");
+    // connectControl("127.0.0.1");
 }
 
 void AudioSenderProcessor::setRemoteLatency(int hostedPluginLatencySaples)
