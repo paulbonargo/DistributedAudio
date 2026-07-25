@@ -9,8 +9,8 @@ Current Status: Plugin built successfully and passed audio through in a DAW (Abl
 				remote device plugin spinup and audio data processing
 				dynamic/configurable remote node
 				parameter adjustment from host -> remote node
-				TCP audio file processing side-job - processed audio caching -> back to host
+				validation of changes - actual plugin hosting node remote node 
+				goal completed: real selectable VST3 hosting + live parameter editing
 
-Up next: Milestone 3 work : further jitter & packet loss & latency evaluation
-							validation of changes - actual plugin hosting node remote node 
-							goal: real selectable VST3 hosting + live parameters
+Up next: Milestone 3+ work : further jitter & packet loss & latency evaluation
+							 TCP audio file processing side-job - processed audio caching -> back to host
