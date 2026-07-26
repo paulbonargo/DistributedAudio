@@ -35,5 +35,5 @@ private:
     int numSlots = 0;
     std::vector<float> audio;
     std::vector<std::atomic<uint64_t>> slotTag;
-    static constexpr uint32_t  kInvalid = ~0ull;
+    static constexpr uint64_t kInvalid = ~0ull;
 };

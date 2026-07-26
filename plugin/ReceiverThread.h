@@ -31,6 +31,10 @@ class ReceiverThread : public juce::Thread
         void prepare(int numChannels);
         void run() override;
 
+        void resetCounters() noexcept;
+
+        uint64_t getPacketsLost() const noexcept { return packetsLost.load(std::memory_order_relaxed); }
+
         uint64_t getPacketsReceived() const noexcept { return packetsReceived.load(std::memory_order_relaxed); }
         uint64_t getFramesDropped()  const noexcept { return packetsDropped.load(std::memory_order_relaxed); }
 
@@ -38,9 +42,14 @@ class ReceiverThread : public juce::Thread
         PlaybackBuffer& playback;
         int numChannels = 0;
 
+        uint64_t lastSequence = 0;
+        bool haveLastSequence = false;
+
         std::vector<uint8_t> rxBuffer;
+
         std::atomic<uint64_t> packetsReceived { 0 };
         std::atomic<uint64_t> packetsDropped { 0 };
+        std::atomic<uint64_t> packetsLost { 0 };
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ReceiverThread)
 };

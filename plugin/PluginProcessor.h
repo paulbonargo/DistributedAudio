@@ -62,6 +62,35 @@ public:
     void getStateInformation(juce::MemoryBlock&) override {}
     void setStateInformation(const void*, int) override {}
 
+    void resetMetrics() noexcept;
+
+    uint64_t getBlocksProcessed() const noexcept { return blocksProcessed.load(std::memory_order_relaxed); }
+    uint64_t getPacketsLost() const noexcept { return receiverThread.getPacketsLost(); }
+
+    // % output blocks that reverted to dry audio signal
+    double getUnderrunRatePercent() const noexcept
+    {
+        const uint64_t blocks = blocksProcessed.load(std::memory_order_relaxed);
+
+        if (blocks == 0)
+            return 0.0;
+
+        return 100.0 * (double) underruns.load(std::memory_order_relaxed) / (double) blocks;
+    }
+
+    // % return packets missing at read deadline
+    double getReturnLossPercent() const noexcept
+    {
+        const uint64_t received = receiverThread.getPacketsReceived();
+        const uint64_t lost = receiverThread.getPacketsLost();
+        const uint64_t expected = received + lost;
+
+        if (expected == 0)
+            return 0.0;
+
+        return 100.0 * (double) lost / (double) expected;
+    }
+
     uint64_t getUnderruns() const noexcept { return underruns.load(std::memory_order_relaxed); }
     uint64_t getPacketsSent() const noexcept { return senderThread.getPacketsSent(); }
     uint64_t getPacketsReceived() const noexcept { return receiverThread.getPacketsReceived(); }
@@ -86,8 +115,10 @@ private:
     std::vector<float> scratchInterleaved; // audio-thread scratch: maxBlock * channels, 
     uint64_t freeRunningPos = 0; // fallback timeline when host gives no playhead
 
-    std::atomic<int> currentLatencySamples{ kBaseLatencySamples };
-    std::atomic<uint64_t> underruns{ 0 };
+    std::atomic<int> currentLatencySamples { kBaseLatencySamples };
+    std::atomic<uint64_t> underruns { 0 };
+
+    std::atomic<uint64_t> blocksProcessed { 0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioSenderProcessor)
 };

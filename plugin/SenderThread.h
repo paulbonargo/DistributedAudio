@@ -32,6 +32,12 @@ class SenderThread : public juce::Thread
 
         void run() override;
 
+        void resetCounters() noexcept
+        {
+            packetsSent.store(0, std::memory_order_relaxed);
+            framesDropped.store(0, std::memory_order_relaxed);
+        }
+
         uint64_t getPacketsSent() const noexcept { return packetsSent.load(std::memory_order_relaxed); }
         uint64_t getFramesDropped() const noexcept { return framesDropped.load(std::memory_order_relaxed); }
 

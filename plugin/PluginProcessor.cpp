@@ -43,6 +43,8 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     scratchInterleaved.assign((size_t)samplesPerBlock * (size_t) numChannels, 0.0f);
     freeRunningPos = 0;
 
+    resetMetrics();
+
     senderThread.prepare(sampleRate, numChannels);
     receiverThread.prepare(numChannels);
     senderThread.startThread();
@@ -50,9 +52,6 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 
     lastSampleRate = sampleRate;
     lastBlockFrames = samplesPerBlock;
-
-    // TODO : REMOVE - TEMP for local testing
-    // connectControl("127.0.0.1");
 }
 
 void AudioSenderProcessor::setRemoteLatency(int hostedPluginLatencySaples)
@@ -94,17 +93,6 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 
     // absolute timeline position of block
     uint64_t blockStart = freeRunningPos;
-
-    /*
-    if (auto* ph = getPlayHead())
-        if (auto pos = ph -> getPosition())
-            if (pos -> getIsPlaying())
-                if (auto s = pos -> getTimeInSamples())
-                    blockStart = (uint64_t)juce::jmax((int64_t)0, *s);
-                    
-    freeRunningPos = blockStart + (uint64_t) numSamples;
-    */
-
     freeRunningPos += (uint64_t) numSamples;
 
     // ship dry input to the node and retain it for underrun fallback
@@ -116,6 +104,7 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
     if (blockStart < L) { buffer.clear(); return; } // pre-roll
 
     const uint64_t readPos = blockStart - L;
+    blocksProcessed.fetch_add(1, std::memory_order_relaxed);
     float* scratch = scratchInterleaved.data();
 
     if (!playbackBuffer.read(readPos, scratch, numSamples))
@@ -130,6 +119,15 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
         for (int i = 0; i < numSamples; ++i)
             out[i] = scratch[(size_t) i * (size_t) numChannels + (size_t) ch];
     }
+}
+
+void AudioSenderProcessor::resetMetrics() noexcept
+{
+    underruns.store(0, std::memory_order_relaxed);
+    blocksProcessed.store(0, std::memory_order_relaxed);
+
+    senderThread.resetCounters();
+    receiverThread.resetCounters();
 }
 
 void AudioSenderProcessor::releaseResources()

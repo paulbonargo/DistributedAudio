@@ -30,10 +30,14 @@ void ReceiverThread::prepare(int newNumChannels)
 
 	numChannels = juce::jmax(1, newNumChannels);
 
+	lastSequence = 0;
+	haveLastSequence = false;
+
 	rxBuffer.assign(sizeof(DistributedAudio::PacketHeader) + (size_t) DistributedAudio::kFramesPerPacket * (size_t) numChannels * sizeof(float), 0);
 	
 	packetsReceived.store(0, std::memory_order_relaxed);
 	packetsDropped.store(0, std::memory_order_relaxed);
+	packetsLost.store(0, std::memory_order_relaxed);
 }
 
 void ReceiverThread::run()
@@ -79,9 +83,28 @@ void ReceiverThread::run()
 			continue;
 		}
 
+		if (haveLastSequence && header.sequenceNumber > lastSequence + 1)
+		{
+			packetsLost.fetch_add(header.sequenceNumber - lastSequence - 1, std::memory_order_relaxed);
+		}
+
+		if (!haveLastSequence || header.sequenceNumber > lastSequence)
+		{
+			lastSequence = header.sequenceNumber;
+			haveLastSequence = true;
+		}
+
 		const float* payload = reinterpret_cast<const float*>(rxBuffer.data() + headerSize);
 		
 		playback.write(header.startSample, payload, (int)header.numSamples);
 		packetsReceived.fetch_add(1, std::memory_order_relaxed);
 	}
+
+}
+
+void ReceiverThread::resetCounters() noexcept
+{
+	packetsReceived.store(0, std::memory_order_relaxed);
+	packetsDropped.store(0, std::memory_order_relaxed);
+	packetsLost.store(0, std::memory_order_relaxed);
 }
