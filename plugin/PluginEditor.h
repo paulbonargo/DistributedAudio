@@ -36,6 +36,13 @@ private:
 	juce::ComboBox pluginMenu;
 	juce::Label statusLabel;
 
+	juce::ToggleButton metricsToggle { "Metrics" };
+	juce::Label metricsLabel;
+
+	juce::ComboBox latencyMenu;
+	juce::Label latencyLabel;
+	juce::TextButton resetMetricsButton { "Reset Metrics" };
+
 	struct ParamRow
 	{
 		std::unique_ptr<juce::Label> label;

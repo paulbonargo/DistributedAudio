@@ -97,14 +97,19 @@ void ProcessingEngine::run()
             drainParameterChanges(*pluginHost);
 
             const float* in = reinterpret_cast<const float*>(rxBuffer.data() + headerSize);
-            work.setSize(ch, nf, false, false, true);
             
+            const int workChannels = juce::jmax(ch, pluginHost -> getRequiredChannels());
+            work.setSize(workChannels, nf, false, false, true);
+
             for (int i = 0; i < nf; ++i)
                 for (int c = 0; c < ch; ++c)
                     work.getWritePointer(c)[i] = in[i * ch + c];
 
+            for (int c = ch; c < workChannels; ++c)
+                work.clear(c, 0, nf);
+
             midi.clear();
-            pluginHost->instance()->processBlock(work, midi);
+            pluginHost -> instance() -> processBlock(work, midi);
 
             float* out = reinterpret_cast<float*>(txBuffer.data() + headerSize);
             

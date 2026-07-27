@@ -39,10 +39,24 @@ bool PluginHost::load(const juce::File& vst3Path, double sampleRate, int blockSi
     }
 
     inst -> enableAllBuses();
+
+    juce::AudioProcessor::BusesLayout stereoLayout;
+    stereoLayout.inputBuses.add(juce::AudioChannelSet::stereo());
+    stereoLayout.outputBuses.add(juce::AudioChannelSet::stereo());
+
+    if (! inst -> setBusesLayout(stereoLayout))
+    {
+        inst -> setChannelLayoutOfBus(true,  0, juce::AudioChannelSet::stereo());
+        inst -> setChannelLayoutOfBus(false, 0, juce::AudioChannelSet::stereo());
+    }
+
     inst -> setRateAndBufferSizeDetails(sampleRate, blockSize);
     inst -> prepareToPlay(sampleRate, blockSize);
-    
+
     plugin = std::move(inst);
+
+    DBG("PluginHost: " << plugin -> getName() << "   main in=" << plugin -> getMainBusNumInputChannels() << "  out=" << plugin -> getMainBusNumOutputChannels());
+
     return true;
 }
 
@@ -54,6 +68,22 @@ juce::String PluginHost::getName() const
 int PluginHost::getLatencySamples() const 
 {
     return plugin != nullptr ? plugin->getLatencySamples() : 0;
+}
+
+int PluginHost::getMainInputChannels() const
+{
+    return plugin != nullptr ? plugin -> getMainBusNumInputChannels() : 0;
+}
+
+int PluginHost::getMainOutputChannels() const
+{
+    return plugin != nullptr ? plugin -> getMainBusNumOutputChannels() : 0;
+}
+
+int PluginHost::getRequiredChannels() const
+{
+    if (plugin == nullptr) return 0;
+        return juce::jmax(plugin -> getTotalNumInputChannels(), plugin -> getTotalNumOutputChannels());
 }
 
 int PluginHost::getNumParameters() const 

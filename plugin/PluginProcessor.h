@@ -95,11 +95,17 @@ public:
     uint64_t getPacketsSent() const noexcept { return senderThread.getPacketsSent(); }
     uint64_t getPacketsReceived() const noexcept { return receiverThread.getPacketsReceived(); }
 
+    // user-selected base budget in samples
+    void setLatencyBudget(int samples); 
+
+    int  getLatencyBudgetBase() const noexcept { return latencyBudgetBase.load(std::memory_order_relaxed); }
+    int  getLatencyTotal() const noexcept { return currentLatencySamples.load(std::memory_order_relaxed); }
+    int  getRemotePluginLatency() const noexcept { return remotePluginLatency.load(std::memory_order_relaxed); }
 
 private:
     void timerCallback() override; // temporary - logs counters until later milestone editor shows them
 
-    static constexpr int kBaseLatencySamples = 4096;  // about 85 ms at 48 kHz - TODO: tune down after measuring
+    static constexpr int kBaseLatencySamples = 4096;  // 4096: about 85 ms at 48 kHz
     static constexpr int kMaxLatencySamples = 16384;
 
     SenderThread senderThread;
@@ -119,6 +125,12 @@ private:
     std::atomic<uint64_t> underruns { 0 };
 
     std::atomic<uint64_t> blocksProcessed { 0 };
+
+    void applyLatency(); // republish to host: base latency + remote latency
+    int publishLatency(); // store and declare to host
+
+    std::atomic<int> latencyBudgetBase { kBaseLatencySamples }; // set by user
+    std::atomic<int> remotePluginLatency { 0 };  // from node
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioSenderProcessor)
 };

@@ -26,6 +26,10 @@ class PluginHost
 
         juce::String getName() const;
         int getLatencySamples() const;
+
+        int getMainInputChannels() const;
+        int getMainOutputChannels() const;
+        int getRequiredChannels() const; 
         
         int getNumParameters() const;
         juce::String getParameterName(int index) const;

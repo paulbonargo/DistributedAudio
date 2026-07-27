@@ -32,8 +32,7 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     senderThread.stopThread(2000);
     receiverThread.stopThread(2000);
 
-    currentLatencySamples.store(kBaseLatencySamples, std::memory_order_relaxed);
-    setLatencySamples(kBaseLatencySamples);
+    publishLatency();
 
     const int playbackCapacity = nextMultipleOfPacket(kMaxLatencySamples * 2 + samplesPerBlock);
     const int dryCapacity = juce::nextPowerOfTwo(kMaxLatencySamples + samplesPerBlock * 2);
@@ -56,11 +55,44 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 
 void AudioSenderProcessor::setRemoteLatency(int hostedPluginLatencySaples)
 {
-    const int total = juce::jlimit(kBaseLatencySamples, kMaxLatencySamples, kBaseLatencySamples + juce::jmax(0, hostedPluginLatencySaples));
+    remotePluginLatency.store(juce::jmax(0, hostedPluginLatencySaples), std::memory_order_relaxed);
+    applyLatency();
+}
+
+void AudioSenderProcessor::setLatencyBudget(int samples)
+{
+    const int clamped = juce::jlimit(DistributedAudio::kFramesPerPacket, kMaxLatencySamples, samples);
+
+    if (clamped == latencyBudgetBase.load(std::memory_order_relaxed))
+        return;
+    
+        latencyBudgetBase.store(clamped, std::memory_order_relaxed);
+        applyLatency();
+
+        resetMetrics();
+}
+
+void AudioSenderProcessor::applyLatency()
+{
+    publishLatency();
+
+    suspendProcessing(true);
+    playbackBuffer.reset();
+    suspendProcessing(false);
+
+    updateHostDisplay();
+}
+
+int AudioSenderProcessor::publishLatency()
+{
+    const int total = juce::jlimit(DistributedAudio::kFramesPerPacket, kMaxLatencySamples, 
+                                   latencyBudgetBase.load(std::memory_order_relaxed)
+                                 + remotePluginLatency.load(std::memory_order_relaxed));
 
     currentLatencySamples.store(total, std::memory_order_relaxed);
-    setLatencySamples(total);
-    updateHostDisplay();
+    setLatencySamples(total);  // re-declare so the host re-aligns PDC (delay comp)
+
+    return total;
 }
 
 void AudioSenderProcessor::connectControl(const juce::String& host)
