@@ -29,6 +29,9 @@ public:
 private:
 	void timerCallback() override;
 	void rebuildFromControlState();
+
+	void updateNetLabel();
+	
 	AudioSenderProcessor& processorRef;
 
 	juce::TextEditor hostField;
@@ -38,6 +41,8 @@ private:
 
 	juce::ToggleButton netToggle { "IP" };
 	juce::Label netLabel;
+
+	juce::ToggleButton setupToggle { "Node Setup" };
 
 	juce::ToggleButton metricsToggle { "Metrics" };
 	juce::Label metricsLabel;

@@ -58,13 +58,13 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 	hostField.setColour (juce::TextEditor::textColourId,            Palette::text);
 	hostField.setColour (juce::TextEditor::outlineColourId,         Palette::outline);
 	hostField.setColour (juce::TextEditor::focusedOutlineColourId,  Palette::accent);
-	addAndMakeVisible(hostField);
+	addChildComponent(hostField);
 
     connectButton.onClick = [this] { processorRef.connectControl( hostField.getText().trim() ); };
     
 	connectButton.setColour(juce::TextButton::buttonColourId,  Palette::buttonBg);
 	connectButton.setColour(juce::TextButton::textColourOffId, Palette::buttonText);
-	addAndMakeVisible(connectButton);
+	addChildComponent(connectButton);
 
     netLabel.setJustificationType(juce::Justification::topLeft);
     netLabel.setFont(juce::FontOptions("Consolas", 13.0f, juce::Font::plain));
@@ -74,14 +74,37 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 
     netToggle.onClick = [this]
     {
-        netLabel.setVisible(netToggle.getToggleState());
+        const bool show = netToggle.getToggleState();
+
+        if (show)
+        {
+            updateNetLabel();
+        }
+
+        netLabel.setVisible(show);
+
         resized();
     };
 
     netToggle.setColour(juce::ToggleButton::textColourId, Palette::textMuted);
     netToggle.setColour(juce::ToggleButton::tickColourId, Palette::accent);
     netToggle.setColour(juce::ToggleButton::tickDisabledColourId, Palette::buttonBg);
-    addAndMakeVisible(netToggle);
+    addChildComponent(netToggle);
+
+    setupToggle.onClick = [this]
+    {
+        const bool show = setupToggle.getToggleState();
+
+        hostField.setVisible(show);
+        connectButton.setVisible(show);
+
+        resized();
+    };
+
+    setupToggle.setColour(juce::ToggleButton::textColourId, Palette::textMuted);
+    setupToggle.setColour(juce::ToggleButton::tickColourId, Palette::accent);
+    setupToggle.setColour(juce::ToggleButton::tickDisabledColourId, Palette::buttonBg);
+    addAndMakeVisible(setupToggle);
 
     pluginMenu.setTextWhenNothingSelected("(No Plugin)");
 
@@ -115,7 +138,17 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 
     metricsToggle.onClick = [this]
     {
-        metricsLabel.setVisible(metricsToggle.getToggleState());
+        const bool show = metricsToggle.getToggleState();
+
+        metricsLabel.setVisible(show);
+        netToggle.setVisible(show);
+
+        if (!show)
+        {
+            netToggle.setToggleState(false, juce::dontSendNotification);
+            netLabel.setVisible(false);
+        }
+        
         resized();
     };
 
@@ -190,6 +223,15 @@ AudioSenderEditor::~AudioSenderEditor()
     processorRef.getControlClient().onStateChanged = nullptr;
 }
 
+void AudioSenderEditor::updateNetLabel()
+{
+    auto& cc = processorRef.getControlClient();
+
+    netLabel.setText("This machine\n  " + DistributedAudio::getLocalAddressList()
+                  + "\nNode\n  " + processorRef.getNodeHost()
+                  + (cc.isConnectedToNode() ? "   (connected)" : "   (not connected)"), juce::dontSendNotification);
+}
+
 void AudioSenderEditor::timerCallback()
 {
     auto& cc = processorRef.getControlClient();
@@ -198,9 +240,8 @@ void AudioSenderEditor::timerCallback()
 
     if (netLabel.isVisible())
     {
-        netLabel.setText("This machine\n  " + DistributedAudio::getLocalAddressList()
-                     + "\nNode\n  " + processorRef.getNodeHost()
-                     + (cc.isConnectedToNode() ? "   (connected)" : "   (not connected)"), juce::dontSendNotification);
+        updateNetLabel();
+        resized();    
     }
 
     if (! metricsLabel.isVisible())
@@ -291,12 +332,21 @@ void AudioSenderEditor::resized()
 	auto r = getLocalBounds().reduced(10);
     r.removeFromTop(28);
 
-    auto row1 = r.removeFromTop(28);
-    connectButton.setBounds(row1.removeFromRight(90));
+    auto topRow = r.removeFromTop(24);
+    setupToggle.setBounds(topRow.removeFromRight(110));
+    statusLabel.setBounds(topRow);
 
-    row1.removeFromRight(6);
-    hostField.setBounds(row1);
-    
+    if (hostField.isVisible())
+    {
+        r.removeFromTop(6);
+        
+        auto addressRow = r.removeFromTop(28);
+        connectButton.setBounds(addressRow.removeFromRight(90));
+        
+        addressRow.removeFromRight(6);
+        hostField.setBounds(addressRow);
+    }
+
 	r.removeFromTop(6);
     pluginMenu.setBounds(r.removeFromTop(28));
 
@@ -307,23 +357,30 @@ void AudioSenderEditor::resized()
     latencyRow.removeFromRight(6);
     latencyLabel.setBounds(latencyRow.removeFromLeft(56));
     latencyMenu.setBounds(latencyRow);
+
+    // diagnostics row
     
     r.removeFromTop(6);
-    auto statusRow = r.removeFromTop(22);
-    netToggle.setBounds(statusRow.removeFromRight(52));
-    metricsToggle.setBounds(statusRow.removeFromRight(84));
-    statusLabel.setBounds(statusRow);
+    auto diagnosisRow= r.removeFromTop(22);
+    metricsToggle.setBounds(diagnosisRow.removeFromLeft(84));
 
-    if (netLabel.isVisible())
+    if (netToggle.isVisible())
     {
-        r.removeFromTop(4);
-        netLabel.setBounds(r.removeFromTop(90));
+        netToggle.setBounds(diagnosisRow.removeFromLeft(52));
     }
 
     if (metricsLabel.isVisible())
     {
         r.removeFromTop(4);
         metricsLabel.setBounds(r.removeFromTop(132));
+    }
+
+    if (netLabel.isVisible())
+    {
+        r.removeFromTop(4);
+
+        const int lineCount = juce::StringArray::fromLines(netLabel.getText()).size();
+        netLabel.setBounds(r.removeFromTop(juce::jlimit(48, 160, lineCount * 17 + 6)));
     }
 
     r.removeFromTop(6);
