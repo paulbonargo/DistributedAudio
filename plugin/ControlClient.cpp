@@ -146,6 +146,21 @@ void ControlClient::selectPlugin(int id)
 
 void ControlClient::setParameter(int index, float value)
 {
+    // keeps cache current
+    {
+        const juce::ScopedLock sl(stateLock);
+        
+        for (auto& p : params)
+        {
+            if (p.index == index)
+            {
+                p.value = value;
+                break;
+            }
+        }
+
+    }
+
     juce::DynamicObject::Ptr o = new juce::DynamicObject();
 
     o -> setProperty("type", "SET_PARAM");

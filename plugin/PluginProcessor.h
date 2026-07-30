@@ -98,9 +98,11 @@ public:
     // user-selected base budget in samples
     void setLatencyBudget(int samples); 
 
-    int  getLatencyBudgetBase() const noexcept { return latencyBudgetBase.load(std::memory_order_relaxed); }
-    int  getLatencyTotal() const noexcept { return currentLatencySamples.load(std::memory_order_relaxed); }
-    int  getRemotePluginLatency() const noexcept { return remotePluginLatency.load(std::memory_order_relaxed); }
+    int getLatencyBudgetBase() const noexcept { return latencyBudgetBase.load(std::memory_order_relaxed); }
+    int getLatencyTotal() const noexcept { return currentLatencySamples.load(std::memory_order_relaxed); }
+    int getRemotePluginLatency() const noexcept { return remotePluginLatency.load(std::memory_order_relaxed); }
+
+    const juce::String& getNodeHost() const noexcept { return lastNodeHost; }
 
 private:
     void timerCallback() override; // temporary - logs counters until later milestone editor shows them

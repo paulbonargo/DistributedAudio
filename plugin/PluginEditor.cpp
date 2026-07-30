@@ -50,7 +50,7 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 	// setSize(300, 150);
 
 	// advanced ui
-	hostField.setText("127.0.0.1", false);
+	hostField.setText(processorRef.getNodeHost(), false);
     hostField.setTextToShowWhenEmpty("Node IP", Palette::textMuted);
 	
 	hostField.setColour (juce::TextEditor::backgroundColourId,      Palette::panel);
@@ -160,6 +160,9 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 	};
 
     setSize(420, 460);
+
+    rebuildFromControlState();
+    
     startTimerHz(5);
 }
 
