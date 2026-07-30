@@ -7,6 +7,7 @@
 */
 
 #include "MainComponent.h"
+#include "NetworkInfo.h"
 
 //==============================================================================
 /**
@@ -21,6 +22,27 @@ MainComponent::MainComponent()
 
     statusLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(statusLabel);
+
+    netLabel.setJustificationType(juce::Justification::topLeft);
+    netLabel.setFont(juce::FontOptions("Consolas", 13.0f, juce::Font::plain));
+    
+    netLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
+    addChildComponent(netLabel); // not visible by default
+
+    netToggle.onClick = [this]
+    {
+        const bool show = netToggle.getToggleState();
+
+        if (show)
+            updateNetLabel();
+
+        netLabel.setVisible(show);
+        resized();
+    };
+
+    netToggle.setColour(juce::ToggleButton::tickColourId, juce::Colours::aqua);
+    netToggle.setColour(juce::ToggleButton::textColourId, juce::Colours::lightgrey);
+    addAndMakeVisible(netToggle);
 
     engine.prepare(sessionSampleRate);
     engine.startThread();
@@ -49,7 +71,7 @@ MainComponent::MainComponent()
     
     control.start();
 
-    setSize(440,220);
+    setSize(480,260);
     startTimerHz(4);
 }
 
@@ -70,12 +92,39 @@ void MainComponent::resized()
     titleLabel.setBounds(r.removeFromTop(28));
 
     r.removeFromTop(8);
+    netToggle.setBounds(r.removeFromTop(24).removeFromLeft(160));
+
+    if (netLabel.isVisible())
+    {
+        r.removeFromTop(4);
+        
+        const int lineCount = juce::StringArray::fromLines(netLabel.getText()).size();
+        netLabel.setBounds(r.removeFromTop(juce::jlimit(64, 240, lineCount * 17 + 6)));
+    }
+
+    r.removeFromTop(6);
     statusLabel.setBounds(r);
+}
+
+void MainComponent::updateNetLabel()
+{
+    const juce::String peer = engine.getAudioPeerAddress();
+
+    netLabel.setText("This node\n  " + DistributedAudio::getLocalAddressList()
+               + "\n\nAudio peer\n  " + (peer.isNotEmpty() ? peer : juce::String("(none yet)")), juce::dontSendNotification);
 }
 
 void MainComponent::timerCallback()
 {
-    statusLabel.setText("Audio in: UDP " + juce::String(DistributedAudio::kNodeAudioPort) + "\nPackets processed: " + juce::String(engine.getPacketsProcessed()) + "\nMode: " + (host != nullptr ? "hosting " + host->getName() : juce::String("echo (no plugin loaded)")), juce::dontSendNotification);
+    if (netLabel.isVisible())
+    {
+        updateNetLabel();
+        resized();
+    }
+
+    statusLabel.setText("Audio in: UDP " + juce::String(DistributedAudio::kNodeAudioPort)
+                    + "\nPackets processed: " + juce::String(engine.getPacketsProcessed())
+                    + "\nMode: " + (host != nullptr ? "hosting " + host -> getName() : juce::String("echo (no plugin loaded)")), juce::dontSendNotification);
 }
 
 juce::var MainComponent::buildPluginListVar()

@@ -7,6 +7,7 @@
 */
 
 #include "PluginEditor.h"
+#include "NetworkInfo.h"
 
 //==============================================================================
 
@@ -64,6 +65,23 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 	connectButton.setColour(juce::TextButton::buttonColourId,  Palette::buttonBg);
 	connectButton.setColour(juce::TextButton::textColourOffId, Palette::buttonText);
 	addAndMakeVisible(connectButton);
+
+    netLabel.setJustificationType(juce::Justification::topLeft);
+    netLabel.setFont(juce::FontOptions("Consolas", 13.0f, juce::Font::plain));
+
+    netLabel.setColour(juce::Label::textColourId, Palette::textMuted);
+    addChildComponent(netLabel);
+
+    netToggle.onClick = [this]
+    {
+        netLabel.setVisible(netToggle.getToggleState());
+        resized();
+    };
+
+    netToggle.setColour(juce::ToggleButton::textColourId, Palette::textMuted);
+    netToggle.setColour(juce::ToggleButton::tickColourId, Palette::accent);
+    netToggle.setColour(juce::ToggleButton::tickDisabledColourId, Palette::buttonBg);
+    addAndMakeVisible(netToggle);
 
     pluginMenu.setTextWhenNothingSelected("(No Plugin)");
 
@@ -178,6 +196,13 @@ void AudioSenderEditor::timerCallback()
 
     statusLabel.setText(juce::String(cc.isConnectedToNode() ? "Connected" : "Not Connected") + "   |   " + (cc.getSelectedPluginName().isNotEmpty() ? cc.getSelectedPluginName() : juce::String("(No Plugin)")), juce::dontSendNotification);
 
+    if (netLabel.isVisible())
+    {
+        netLabel.setText("This machine\n  " + DistributedAudio::getLocalAddressList()
+                     + "\nNode\n  " + processorRef.getNodeHost()
+                     + (cc.isConnectedToNode() ? "   (connected)" : "   (not connected)"), juce::dontSendNotification);
+    }
+
     if (! metricsLabel.isVisible())
         return; // when hidden return nothing
 
@@ -285,8 +310,15 @@ void AudioSenderEditor::resized()
     
     r.removeFromTop(6);
     auto statusRow = r.removeFromTop(22);
+    netToggle.setBounds(statusRow.removeFromRight(52));
     metricsToggle.setBounds(statusRow.removeFromRight(84));
     statusLabel.setBounds(statusRow);
+
+    if (netLabel.isVisible())
+    {
+        r.removeFromTop(4);
+        netLabel.setBounds(r.removeFromTop(90));
+    }
 
     if (metricsLabel.isVisible())
     {

@@ -58,10 +58,17 @@ void ProcessingEngine::drainParameterChanges(PluginHost& host)
     pendingParams.clear();
 }
 
+juce::String ProcessingEngine::getAudioPeerAddress() const
+{
+    const juce::ScopedLock sl(peerLock);
+    return audioPeerAddress;
+}
+
 void ProcessingEngine::run()
 {
     juce::ScopedNoDenormals noDenormals;
     juce::DatagramSocket rx, tx;
+    juce::String knownPeer;
 
     if (!rx.bindToPort(DistributedAudio::kNodeAudioPort))
     {
@@ -88,6 +95,14 @@ void ProcessingEngine::run()
         const int nf = (int) h.numSamples;
 
         if (bytes - headerSize != nf * ch * (int) sizeof(float) || ch < 1 || ch > 2) continue;
+
+        if (ip != knownPeer)
+        {
+            knownPeer = ip;
+
+            const juce::ScopedLock sl(peerLock);
+            audioPeerAddress = ip;
+        }
 
         const juce::ScopedLock sl(pluginLock);
 

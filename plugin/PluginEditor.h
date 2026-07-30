@@ -36,6 +36,9 @@ private:
 	juce::ComboBox pluginMenu;
 	juce::Label statusLabel;
 
+	juce::ToggleButton netToggle { "IP" };
+	juce::Label netLabel;
+
 	juce::ToggleButton metricsToggle { "Metrics" };
 	juce::Label metricsLabel;
 

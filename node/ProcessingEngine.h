@@ -35,6 +35,7 @@ class ProcessingEngine : public juce::Thread
         void queueParameterChange(int index, float value);
         
         uint64_t getPacketsProcessed() const noexcept { return packetsProcessed.load(std::memory_order_relaxed); }
+        juce::String getAudioPeerAddress() const;
 
     private:
         void drainParameterChanges(PluginHost& host);
@@ -52,6 +53,9 @@ class ProcessingEngine : public juce::Thread
 
         juce::CriticalSection paramLock;
         std::vector<std::pair<int, float>> pendingParams; // param lock
+
+        mutable juce::CriticalSection peerLock;
+        juce::String audioPeerAddress;
 
         juce::AudioBuffer<float> work;
         juce::MidiBuffer midi;

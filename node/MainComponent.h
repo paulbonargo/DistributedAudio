@@ -27,8 +27,10 @@ class MainComponent : public juce::Component, private juce::Timer
         void resized() override;
 
         
-        private:
+    private:
         void timerCallback() override;
+        void updateNetLabel();
+        
         ProcessingEngine engine;
         
         ControlServer control;
@@ -37,6 +39,9 @@ class MainComponent : public juce::Component, private juce::Timer
         double sessionSampleRate = 48000.0;
         
         juce::Label titleLabel, statusLabel;
+
+        juce::ToggleButton netToggle { "Show IP addresses" };
+        juce::Label netLabel;
 
         PluginRegistry registry;
         std::unique_ptr<PluginHost> host;
