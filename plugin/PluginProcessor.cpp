@@ -51,6 +51,9 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 
     lastSampleRate = sampleRate;
     lastBlockFrames = samplesPerBlock;
+
+    if(restoredFromState && lastNodeHost.isNotEmpty())
+        connectControl(lastNodeHost);
 }
 
 void AudioSenderProcessor::setRemoteLatency(int hostedPluginLatencySaples)
@@ -151,6 +154,76 @@ void AudioSenderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
         for (int i = 0; i < numSamples; ++i)
             out[i] = scratch[(size_t) i * (size_t) numChannels + (size_t) ch];
     }
+}
+
+void AudioSenderProcessor::getStateInformation(juce::MemoryBlock& destData)
+{
+    juce::ValueTree state("DistributedAudioState");
+
+    state.setProperty("nodeHost", lastNodeHost, nullptr);
+    state.setProperty("latencyBase", latencyBudgetBase.load(std::memory_order_relaxed), nullptr);
+    state.setProperty("plugin", controlClient.getSelectedPluginName(), nullptr);
+
+    // TODO : uncomment when add multi-slot functionality
+    // state.setProperty("slot", slot, nullptr);
+
+    juce::ValueTree paramsTree("Params");
+
+    for (const auto& p : controlClient.getParameters())
+    {
+        juce::ValueTree pt("P");
+
+        pt.setProperty("i", p.index, nullptr);
+        pt.setProperty("v", (double) p.value, nullptr);
+
+        paramsTree.appendChild(pt, nullptr);
+    }
+
+    state.appendChild(paramsTree, nullptr);
+
+    if (auto xml = state.createXml())
+    {
+        copyXmlToBinary(*xml, destData);
+    }
+}
+
+void AudioSenderProcessor::setStateInformation(const void* data, int sizeInBytes)
+{
+    auto xml = getXmlFromBinary(data, sizeInBytes);
+
+    if (xml == nullptr) 
+        return;
+
+    auto state = juce::ValueTree::fromXml(*xml);
+
+    if (! state.isValid()) 
+        return;
+
+    lastNodeHost = state.getProperty("nodeHost", "127.0.0.1").toString();
+
+    latencyBudgetBase.store(juce::jlimit(DistributedAudio::kFramesPerPacket, kMaxLatencySamples, (int) state.getProperty("latencyBase", kBaseLatencySamples)), std::memory_order_relaxed);
+
+    // TODO : un-comment when add multi-slot functionality
+    // slot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, (int) state.getProperty("slot", 0));
+
+    const juce::String pluginName = state.getProperty("plugin", juce::String()).toString();
+
+    std::vector<RemoteParamValue> values;
+    auto paramsTree = state.getChildWithName("Params");
+
+    for (int i = 0; i < paramsTree.getNumChildren(); ++i)
+    {
+        auto pt = paramsTree.getChild(i);
+        values.push_back({ (int) pt.getProperty("i", 0), (float) (double) pt.getProperty("v", 0.0) });
+    }
+
+    if (pluginName.isNotEmpty())
+        controlClient.requestRestore(pluginName, values);
+
+    restoredFromState = true;
+
+    if (lastBlockFrames > 0)
+        connectControl(lastNodeHost);
 }
 
 void AudioSenderProcessor::resetMetrics() noexcept

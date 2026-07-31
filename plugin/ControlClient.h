@@ -33,6 +33,12 @@ struct RemoteParamInfo
     float value = 0.0f; // value - normalized from 0 to 1
 };
 
+struct RemoteParamValue
+{
+    int index = 0;
+    float value = 0.0f; // normalized from 0 to 1
+};
+
 class ControlClient : public juce::InterprocessConnection, private juce::Timer
 {
     public:
@@ -58,6 +64,8 @@ class ControlClient : public juce::InterprocessConnection, private juce::Timer
 
         void connectionMade() override;
         void connectionLost() override;
+
+        void requestRestore(const juce::String& pluginName, const std::vector<RemoteParamValue>& values);
         
         void messageReceived(const juce::MemoryBlock& message) override;
 
@@ -86,6 +94,9 @@ class ControlClient : public juce::InterprocessConnection, private juce::Timer
 
         std::vector<RemotePluginInfo> pluginList;
         std::vector<RemoteParamInfo> params;
+
+        juce::String pendingRestoreName;
+        std::vector<RemoteParamValue> pendingRestoreValues;
 
         juce::String selectedName;
 

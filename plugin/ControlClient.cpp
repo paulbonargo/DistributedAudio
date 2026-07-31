@@ -82,6 +82,14 @@ void ControlClient::sendJson(const juce::var& message)
     sendMessage(block);
 }
 
+void ControlClient::requestRestore(const juce::String& pluginName, const std::vector<RemoteParamValue>& values)
+{
+    const juce::ScopedLock sl(stateLock);
+
+    pendingRestoreName = pluginName;
+    pendingRestoreValues = values;
+}
+
 void ControlClient::messageReceived(const juce::MemoryBlock& message)
 {
     const juce::var msg = juce::JSON::parse(message.toString());
@@ -94,24 +102,40 @@ void ControlClient::messageReceived(const juce::MemoryBlock& message)
 
     if (type == "PLUGIN_LIST")
     {
-        const juce::ScopedLock sl(stateLock);
-        pluginList.clear();
-
-        if (auto* arr = msg["plugins"].getArray())
+        int restoreId = -1;
         {
-            for (auto& p : *arr)
+            const juce::ScopedLock sl(stateLock);
+
+            pluginList.clear();
+
+            if (auto* arr = msg["plugins"].getArray())
             {
-                pluginList.push_back({ (int) p["id"], p["name"].toString(), p["format"].toString() });
+                for (auto& p : *arr)
+                {
+                    pluginList.push_back({ (int) p["id"], p["name"].toString(), p["format"].toString() });
+                }
+            }
+
+            // matching by name
+            if (pendingRestoreName.isNotEmpty())
+            {
+                for (auto& info : pluginList)
+                {
+                    if (info.name == pendingRestoreName)
+                    {
+                        restoreId = info.id;
+                        break;
+                    }
+                }
             }
         }
-
-        // TODO - TEMPORARY : auto-select the first plugin once the node's list arrives
-        if (! getPluginList().empty() && getSelectedPluginName().isEmpty())
-            selectPlugin(getPluginList().front().id);
-
+        if (restoreId >= 0)
+            selectPlugin(restoreId);
     }
     else if (type == "PLUGIN_SELECTED")
     {
+        std::vector<RemoteParamValue> toPush;
+
         {
             const juce::ScopedLock sl(stateLock);
             selectedName = msg["name"].toString();
@@ -123,8 +147,20 @@ void ControlClient::messageReceived(const juce::MemoryBlock& message)
                     params.push_back({ (int) p["index"], p["name"].toString(), (float) (double) p["value"] });
                 }
             }
+            // saved plugin a session asks for - repopulate values
+            if (pendingRestoreName.isNotEmpty() && selectedName == pendingRestoreName)
+            {
+                toPush = pendingRestoreValues;
+                pendingRestoreName.clear();
+                pendingRestoreValues.clear();
+            }
         }
         processor.setRemoteLatency((int) msg["latencySamples"]);
+
+        for (const auto& v : toPush)
+        {
+            setParameter(v.index, v.value);
+        }
     }
     else if (type == "ERROR")
     {

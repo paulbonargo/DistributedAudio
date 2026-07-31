@@ -59,8 +59,8 @@ public:
     
     void changeProgramName(int, const juce::String&) override {}
 
-    void getStateInformation(juce::MemoryBlock&) override {}
-    void setStateInformation(const void*, int) override {}
+    void getStateInformation(juce::MemoryBlock&) override;
+    void setStateInformation(const void*, int) override;
 
     void resetMetrics() noexcept;
 
@@ -133,6 +133,8 @@ private:
 
     std::atomic<int> latencyBudgetBase { kBaseLatencySamples }; // set by user
     std::atomic<int> remotePluginLatency { 0 };  // from node
+
+    bool restoredFromState = false; // true when a saved session is loaded
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioSenderProcessor)
 };
