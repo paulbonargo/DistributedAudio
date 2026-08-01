@@ -8,6 +8,7 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "MainComponent.h"
+#include "DistributedAudioPacket.h"
 
 //==============================================================================
 /**
@@ -26,9 +27,20 @@ class ProcessingNodeApplication : public juce::JUCEApplication
             return "0.3.0";
         }
 
-        void initialise(const juce::String&) override 
+        void initialise(const juce::String& commandLine) override 
         {
-            mainWindow.reset(new MainWindow(getApplicationName()));
+            // --slot=N sets the ports: 0 -> 9000/9001/9100 , 1 -> 9002/9003/9101 , etc.
+            int slot = 0;
+
+            const juce::String token = "--slot=";
+            const int at = commandLine.indexOf(token);
+            
+            if (at >= 0)
+            {
+                slot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, commandLine.substring(at + token.length()).getIntValue());
+            }
+
+            mainWindow.reset(new MainWindow(getApplicationName() + "  -  Slot " + juce::String(slot + 1), slot));
         }
 
         void shutdown() override
@@ -39,10 +51,10 @@ class ProcessingNodeApplication : public juce::JUCEApplication
         class MainWindow : public juce::DocumentWindow
         {
             public: 
-                explicit MainWindow(const juce::String& name) : DocumentWindow(name, juce::Colours::black, DocumentWindow:: allButtons)
+                MainWindow(const juce::String& name, int slot) : DocumentWindow(name, juce::Colours::black, DocumentWindow::allButtons)
                 {
                     setUsingNativeTitleBar(true);
-                    setContentOwned(new MainComponent(), true);
+                    setContentOwned(new MainComponent(slot), true);
                     setResizable(true, false);
                     centreWithSize(getWidth(), getHeight());
                     setVisible(true);

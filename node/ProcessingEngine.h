@@ -26,13 +26,15 @@ class ProcessingEngine : public juce::Thread
         ProcessingEngine();
         ~ProcessingEngine() override;
 
-        void prepare(double sampleRate);
+        void prepare(double sampleRate, int slot);
 
         void run() override;
 
         void setPluginHost(PluginHost* host);
 
         void queueParameterChange(int index, float value);
+
+        bool isBound() const noexcept { return bound.load(std::memory_order_acquire); }
         
         uint64_t getPacketsProcessed() const noexcept { return packetsProcessed.load(std::memory_order_relaxed); }
         juce::String getAudioPeerAddress() const;
@@ -40,6 +42,8 @@ class ProcessingEngine : public juce::Thread
     private:
         void drainParameterChanges(PluginHost& host);
         
+        int mySlot = 0;
+
         // default sample rate for project
         double sampleRate = 48000.0; 
         
@@ -51,6 +55,8 @@ class ProcessingEngine : public juce::Thread
         juce::CriticalSection pluginLock;
         PluginHost* pluginHost = nullptr; // plugin lock
 
+        std::atomic<bool> bound { false };
+        
         juce::CriticalSection paramLock;
         std::vector<std::pair<int, float>> pendingParams; // param lock
 
@@ -59,7 +65,6 @@ class ProcessingEngine : public juce::Thread
 
         juce::AudioBuffer<float> work;
         juce::MidiBuffer midi;
-
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProcessingEngine)
 };

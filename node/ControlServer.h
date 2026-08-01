@@ -23,7 +23,7 @@ class ControlServer : public juce::InterprocessConnectionServer
         ControlServer();
         ~ControlServer() override;
 
-        void start();
+        void start(int port);
 
         std::function<void(double sampleRate, int blockFrames)> onHello;
         std::function<juce::var()> buildPluginList;

@@ -20,7 +20,7 @@
 class MainComponent : public juce::Component, private juce::Timer
 {
     public:
-        MainComponent();
+        explicit MainComponent(int slot);
         ~MainComponent() override;
 
         void paint(juce::Graphics&) override;
@@ -34,6 +34,8 @@ class MainComponent : public juce::Component, private juce::Timer
         ProcessingEngine engine;
         
         ControlServer control;
+
+        int mySlot = 0;
         
         // default sample rate for project
         double sessionSampleRate = 48000.0;

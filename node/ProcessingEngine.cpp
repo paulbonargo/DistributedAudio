@@ -23,10 +23,12 @@ ProcessingEngine::~ProcessingEngine()
     stopThread(2000);
 }
 
-void ProcessingEngine::prepare(double newSampleRate)
+void ProcessingEngine::prepare(double newSampleRate, int slot)
 {
     jassert(!isThreadRunning());
     sampleRate = newSampleRate;
+
+    mySlot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, slot);
 
     const size_t maxBytes = sizeof(DistributedAudio::PacketHeader) + (size_t) DistributedAudio::kFramesPerPacket * 2 * sizeof(float);
     
@@ -70,10 +72,18 @@ void ProcessingEngine::run()
     juce::DatagramSocket rx, tx;
     juce::String knownPeer;
 
-    if (!rx.bindToPort(DistributedAudio::kNodeAudioPort))
+    const int listenPort = DistributedAudio::nodeAudioPortForSlot(mySlot);
+    const int replyPort = DistributedAudio::hostAudioPortForSlot(mySlot);
+
+    rx.setEnablePortReuse(false);
+
+    if (!rx.bindToPort(listenPort))
     {
+        DBG("ProcessingEngine: Failed to bind UDP" << listenPort);
+        bound.store(false, std::memory_order_release);
         return;
     }
+    bound.store(true, std::memory_order_release);
 
     const int headerSize = (int) sizeof(DistributedAudio::PacketHeader);
 
@@ -135,7 +145,7 @@ void ProcessingEngine::run()
             h.flags |= DistributedAudio::kFlagProcessed;
             std::memcpy(txBuffer.data(), &h, sizeof(h));
             
-            tx.write(ip, DistributedAudio::kHostAudioPort, txBuffer.data(), bytes);
+            tx.write(ip, replyPort, txBuffer.data(), bytes);
         } 
         else
         {   
@@ -143,7 +153,7 @@ void ProcessingEngine::run()
             h.flags |= DistributedAudio::kFlagProcessed; 
             std::memcpy(rxBuffer.data(), &h, sizeof(h));
             
-            tx.write(ip, DistributedAudio::kHostAudioPort, rxBuffer.data(), bytes);
+            tx.write(ip, replyPort, rxBuffer.data(), bytes);
         }
         packetsProcessed.fetch_add(1, std::memory_order_relaxed);
     }

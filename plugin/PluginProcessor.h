@@ -70,6 +70,7 @@ public:
 
     uint64_t getBlocksProcessed() const noexcept { return blocksProcessed.load(std::memory_order_relaxed); }
     uint64_t getPacketsLost() const noexcept { return receiverThread.getPacketsLost(); }
+    uint64_t getPacketsDropped() const noexcept { return receiverThread.getFramesDropped(); }
 
     // % output blocks that reverted to dry audio signal
     double getUnderrunRatePercent() const noexcept

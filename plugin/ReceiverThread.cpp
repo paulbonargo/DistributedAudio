@@ -47,6 +47,8 @@ void ReceiverThread::run()
 {
 	juce::DatagramSocket socket;
 
+	socket.setEnablePortReuse(false);
+
 	const int listenPort = DistributedAudio::hostAudioPortForSlot(mySlot);
 
 	if (!socket.bindToPort(listenPort))

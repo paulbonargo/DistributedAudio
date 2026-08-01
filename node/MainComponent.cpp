@@ -13,7 +13,7 @@
 /**
 */
 
-MainComponent::MainComponent()
+MainComponent::MainComponent(int slot) : mySlot(juce::jlimit(0, DistributedAudio::kMaxSlots - 1, slot))
 {
     titleLabel.setText("Distributed Audio Processing Node", juce::dontSendNotification);
     titleLabel.setFont(juce::FontOptions(18.0f, juce::Font::bold));
@@ -44,7 +44,7 @@ MainComponent::MainComponent()
     netToggle.setColour(juce::ToggleButton::textColourId, juce::Colours::lightgrey);
     addAndMakeVisible(netToggle);
 
-    engine.prepare(sessionSampleRate);
+    engine.prepare(sessionSampleRate, mySlot);
     engine.startThread();
 
     registry.loadFromFile(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getSiblingFile("plugins.config"));
@@ -69,7 +69,7 @@ MainComponent::MainComponent()
         engine.queueParameterChange(index, value);
     };
     
-    control.start();
+    control.start(DistributedAudio::controlPortForSlot(mySlot));
 
     setSize(480,260);
     startTimerHz(4);
@@ -122,9 +122,13 @@ void MainComponent::timerCallback()
         resized();
     }
 
-    statusLabel.setText("Audio in: UDP " + juce::String(DistributedAudio::kNodeAudioPort)
-                    + "\nPackets processed: " + juce::String(engine.getPacketsProcessed())
-                    + "\nMode: " + (host != nullptr ? "hosting " + host -> getName() : juce::String("echo (no plugin loaded)")), juce::dontSendNotification);
+    statusLabel.setText("Slot " + juce::String(mySlot + 1)
+                   + "   dry in: UDP "  + juce::String(DistributedAudio::nodeAudioPortForSlot(mySlot))
+                   + "   processed out: UDP " + juce::String(DistributedAudio::hostAudioPortForSlot(mySlot))
+                   +  "\nControl: TCP "  + juce::String(DistributedAudio::controlPortForSlot(mySlot))
+                   +  "\nPackets processed: " + juce::String(engine.getPacketsProcessed())
+                   +  "\nMode: " + (host != nullptr ? "hosting " + host -> getName() : juce::String("echo (no plugin loaded)"))
+                   +     (engine.isBound() ? "" : "\n** SLOT IN USE - another node owns this slot **"), juce::dontSendNotification);
 }
 
 juce::var MainComponent::buildPluginListVar()

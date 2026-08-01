@@ -97,6 +97,8 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
 
         hostField.setVisible(show);
         connectButton.setVisible(show);
+        slotLabel.setVisible(show);
+        slotMenu.setVisible(show);
 
         resized();
     };
@@ -105,6 +107,32 @@ AudioSenderEditor::AudioSenderEditor(AudioSenderProcessor& p) : AudioProcessorEd
     setupToggle.setColour(juce::ToggleButton::tickColourId, Palette::accent);
     setupToggle.setColour(juce::ToggleButton::tickDisabledColourId, Palette::buttonBg);
     addAndMakeVisible(setupToggle);
+
+    slotLabel.setText("Slot", juce::dontSendNotification);
+
+    slotLabel.setColour(juce::Label::textColourId, Palette::textMuted);
+    addAndMakeVisible(slotLabel);
+    
+    
+    for (int s = 0; s < DistributedAudio::kMaxSlots; ++s)
+    slotMenu.addItem("Slot " + juce::String(s + 1)
+                + "   (UDP " + juce::String(DistributedAudio::nodeAudioPortForSlot(s))
+                +    "/"        + juce::String(DistributedAudio::hostAudioPortForSlot(s)) 
+                +    ")", s + 1);
+
+    slotMenu.onChange = [this]
+    {
+        if (buildingUi) return;
+        processorRef.setSlot(slotMenu.getSelectedId() - 1);
+    };
+    
+    slotMenu.setSelectedId(processorRef.getSlot() + 1, juce::dontSendNotification);
+
+    slotMenu.setColour(juce::ComboBox::backgroundColourId, Palette::panel);
+    slotMenu.setColour(juce::ComboBox::textColourId,       Palette::text);
+    slotMenu.setColour(juce::ComboBox::outlineColourId,    Palette::outline);
+    slotMenu.setColour(juce::ComboBox::arrowColourId,      Palette::accent);
+    addAndMakeVisible(slotMenu);
 
     pluginMenu.setTextWhenNothingSelected("(No Plugin)");
 
@@ -236,7 +264,13 @@ void AudioSenderEditor::timerCallback()
 {
     auto& cc = processorRef.getControlClient();
 
-    statusLabel.setText(juce::String(cc.isConnectedToNode() ? "Connected" : "Not Connected") + "   |   " + (cc.getSelectedPluginName().isNotEmpty() ? cc.getSelectedPluginName() : juce::String("(No Plugin)")), juce::dontSendNotification);
+    statusLabel.setText(juce::String(
+        cc.isConnectedToNode()  ? "Connected" : "Not Connected")
+                            +  "   |   " 
+                            +  (cc.getSelectedPluginName().isNotEmpty() ? cc.getSelectedPluginName() : juce::String("(No Plugin)")) 
+                            +  "   |   Slot " 
+                            +  juce::String(processorRef.getSlot() + 1) 
+                            +  (processorRef.isReceiverBound() ? "" : "  ** IN USE **"), juce::dontSendNotification);
 
     if (netLabel.isVisible())
     {
@@ -262,6 +296,7 @@ void AudioSenderEditor::timerCallback()
             << row("  base",    juce::String(processorRef.getLatencyBudgetBase()),"+ plugin " + juce::String(processorRef.getRemotePluginLatency()))
     << "\n" << row("Sent",      juce::String(processorRef.getPacketsSent()))
             << row("Received",  juce::String(processorRef.getPacketsReceived()))
+            << row("Dropped",   juce::String(processorRef.getPacketsDropped()))
             << row("Lost",      juce::String(processorRef.getPacketsLost()), juce::String(processorRef.getReturnLossPercent(), 3) + " %")
     << "\n" << row("Blocks",    juce::String(processorRef.getBlocksProcessed()))
             << row("Underruns", juce::String(processorRef.getUnderruns()), juce::String(processorRef.getUnderrunRatePercent(), 3) + " %");
@@ -345,6 +380,11 @@ void AudioSenderEditor::resized()
         
         addressRow.removeFromRight(6);
         hostField.setBounds(addressRow);
+
+        r.removeFromTop(6);
+        auto slotRow = r.removeFromTop(26);
+        slotLabel.setBounds(slotRow.removeFromLeft(44));
+        slotMenu.setBounds(slotRow);
     }
 
 	r.removeFromTop(6);

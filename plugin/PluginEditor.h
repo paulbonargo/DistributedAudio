@@ -36,6 +36,10 @@ private:
 
 	juce::TextEditor hostField;
 	juce::TextButton connectButton { "Connect" };
+
+	juce::ComboBox slotMenu;
+	juce::Label slotLabel;
+
 	juce::ComboBox pluginMenu;
 	juce::Label statusLabel;
 

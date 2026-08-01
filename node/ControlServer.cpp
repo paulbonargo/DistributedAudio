@@ -93,11 +93,11 @@ ControlServer::~ControlServer()
     stop();
 }
 
-void ControlServer::start()
+void ControlServer::start(int port)
 {
-    if (! beginWaitingForSocket(DistributedAudio::kControlPort))
+    if (! beginWaitingForSocket(port))
     {
-        DBG("ControlServer: failed to listen on TCP " << DistributedAudio::kControlPort);
+        DBG("ControlServer: failed to listen on TCP " << port);
     }
 }
 
