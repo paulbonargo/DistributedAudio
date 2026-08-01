@@ -44,8 +44,11 @@ void AudioSenderProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 
     resetMetrics();
 
+    lastNumChannels = numChannels;
+
     senderThread.prepare(sampleRate, numChannels);
-    receiverThread.prepare(numChannels);
+    senderThread.setSlot(slot);
+    receiverThread.prepare(numChannels, slot);
     senderThread.startThread();
     receiverThread.startThread();
 
@@ -102,7 +105,36 @@ void AudioSenderProcessor::connectControl(const juce::String& host)
 {
     lastNodeHost = host;
     senderThread.setDestinationHost(host);
-    controlClient.start(host, lastSampleRate, lastBlockFrames);
+    controlClient.start(host, lastSampleRate, lastBlockFrames, DistributedAudio::controlPortForSlot(slot));
+}
+
+void AudioSenderProcessor::setSlot(int newSlot)
+{
+    newSlot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, newSlot);
+    
+    if (newSlot == slot) 
+    {
+        return;
+    }
+
+    slot = newSlot;
+
+    senderThread.setSlot(slot);
+
+    receiverThread.stopThread(2000);
+    controlClient.stop();
+
+    suspendProcessing(true);
+    playbackBuffer.reset();
+    suspendProcessing(false);
+
+    receiverThread.prepare(lastNumChannels, slot);
+    receiverThread.startThread();
+
+    controlClient.start(lastNodeHost, lastSampleRate, lastBlockFrames, DistributedAudio::controlPortForSlot(slot));
+
+    resetMetrics();
+    updateHostDisplay();
 }
 
 bool AudioSenderProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -160,12 +192,10 @@ void AudioSenderProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     juce::ValueTree state("DistributedAudioState");
 
+    state.setProperty("slot", slot, nullptr);
     state.setProperty("nodeHost", lastNodeHost, nullptr);
     state.setProperty("latencyBase", latencyBudgetBase.load(std::memory_order_relaxed), nullptr);
     state.setProperty("plugin", controlClient.getSelectedPluginName(), nullptr);
-
-    // TODO : uncomment when add multi-slot functionality
-    // state.setProperty("slot", slot, nullptr);
 
     juce::ValueTree paramsTree("Params");
 
@@ -200,11 +230,9 @@ void AudioSenderProcessor::setStateInformation(const void* data, int sizeInBytes
         return;
 
     lastNodeHost = state.getProperty("nodeHost", "127.0.0.1").toString();
+    slot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, (int) state.getProperty("slot", 0));
 
     latencyBudgetBase.store(juce::jlimit(DistributedAudio::kFramesPerPacket, kMaxLatencySamples, (int) state.getProperty("latencyBase", kBaseLatencySamples)), std::memory_order_relaxed);
-
-    // TODO : un-comment when add multi-slot functionality
-    // slot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, (int) state.getProperty("slot", 0));
 
     const juce::String pluginName = state.getProperty("plugin", juce::String()).toString();
 

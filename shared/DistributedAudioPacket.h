@@ -53,10 +53,30 @@ namespace DistributedAudio
 	// 1024 bytes + 24 byte header = 1048 bytes, which is under typical MTU of 1500
 	constexpr int kFramesPerPacket = 128;
 
-	// ports for UDP
+	// dynamic slots - set at 8
+	constexpr int kMaxSlots = 8;
+
+	constexpr int nodeAudioPortForSlot(int slot) 
+	{
+		return 9000  +  slot * 2;
+	}
+
+	constexpr int hostAudioPortForSlot(int slot) 
+	{
+		return 9001  +  slot * 2;
+	}
+
+	constexpr int controlPortForSlot(int slot) 
+	{
+		return 9100  +  slot;
+	}
+
+
+
+	// ports for UDP - slot 0 aliases
 	constexpr int kNodeAudioPort = 9000; // remote node
 	constexpr int kHostAudioPort = 9001; // host machine
 
-	// port for TCP
-	constexpr int kControlPort = 9100;
+	// port for TCP - slot 0 alias
+	constexpr int kControlPort = 9100; // control plane
 }

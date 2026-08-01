@@ -24,11 +24,12 @@ ControlClient::~ControlClient()
     stop();
 }
 
-void ControlClient::start(const juce::String& host, double sampleRate, int blockFrames)
+void ControlClient::start(const juce::String& host, double sampleRate, int blockFrames, int controlPort)
 {
     nodeHost = host;
     hostSampleRate = sampleRate;
     hostBlockFrames = blockFrames;
+    nodeControlPort = controlPort;
 
     running.store(true, std::memory_order_relaxed);
     
@@ -49,7 +50,7 @@ void ControlClient::timerCallback()
 {
     if (running.load(std::memory_order_relaxed) && !isConnected())
     {
-        connectToSocket(nodeHost, DistributedAudio::kControlPort, 500);
+        connectToSocket(nodeHost, nodeControlPort, 500);
     }
 }
 

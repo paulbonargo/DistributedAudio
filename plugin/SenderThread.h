@@ -41,6 +41,11 @@ class SenderThread : public juce::Thread
         uint64_t getPacketsSent() const noexcept { return packetsSent.load(std::memory_order_relaxed); }
         uint64_t getFramesDropped() const noexcept { return framesDropped.load(std::memory_order_relaxed); }
 
+        void setSlot(int slot) noexcept
+        {
+            destPort.store(DistributedAudio::nodeAudioPortForSlot(slot), std::memory_order_relaxed);
+        }
+
     private:
 
         // about 340 ms headroom for initial parameter setup, can adjust as needed
@@ -66,6 +71,8 @@ class SenderThread : public juce::Thread
 
         std::atomic<uint64_t> packetsSent{ 0 };
         std::atomic<uint64_t> framesDropped{ 0 };
+
+        std::atomic<int> destPort { DistributedAudio::kNodeAudioPort };
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SenderThread)
 };

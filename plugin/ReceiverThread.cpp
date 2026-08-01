@@ -24,17 +24,20 @@ ReceiverThread::~ReceiverThread()
 }
 
 
-void ReceiverThread::prepare(int newNumChannels)
+void ReceiverThread::prepare(int newNumChannels, int slot)
 {
 	jassert(!isThreadRunning()); // allocation below is not thread safe, so should only be called before starting the thread
 
 	numChannels = juce::jmax(1, newNumChannels);
+	mySlot = juce::jlimit(0, DistributedAudio::kMaxSlots - 1, slot);
 
 	lastSequence = 0;
 	haveLastSequence = false;
 
 	rxBuffer.assign(sizeof(DistributedAudio::PacketHeader) + (size_t) DistributedAudio::kFramesPerPacket * (size_t) numChannels * sizeof(float), 0);
 	
+	bound.store(false, std::memory_order_relaxed);
+
 	packetsReceived.store(0, std::memory_order_relaxed);
 	packetsDropped.store(0, std::memory_order_relaxed);
 	packetsLost.store(0, std::memory_order_relaxed);
@@ -44,11 +47,15 @@ void ReceiverThread::run()
 {
 	juce::DatagramSocket socket;
 
-	if (!socket.bindToPort(DistributedAudio::kHostAudioPort))
+	const int listenPort = DistributedAudio::hostAudioPortForSlot(mySlot);
+
+	if (!socket.bindToPort(listenPort))
 	{
-		DBG("ReceiverThread: failed to bind UDP " << DistributedAudio::kHostAudioPort);
+		DBG("ReceiverThread: failed to bind UDP " << listenPort << " (Slot in use)");
+		bound.store(false, std::memory_order_relaxed);
 		return;
 	}
+	bound.store(true, std::memory_order_relaxed);
 
 	const int headerSize = (int) sizeof(DistributedAudio::PacketHeader);
 

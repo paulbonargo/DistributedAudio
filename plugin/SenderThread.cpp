@@ -147,7 +147,9 @@ void SenderThread::run()
 			dest = destinationHost;
 		}
 
-		if (socket.write(dest, DistributedAudio::kNodeAudioPort, packetBuffer.data(), packetBytes) == packetBytes)
+		const int destinationPort = destPort.load(std::memory_order_relaxed);
+
+		if (socket.write(dest, destinationPort, packetBuffer.data(), packetBytes) == packetBytes)
 		{
 			++sequenceNumber;
 			framesSentTotal += framesThisPacket;

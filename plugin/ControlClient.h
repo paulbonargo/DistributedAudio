@@ -9,6 +9,8 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 
+#include "DistributedAudioPacket.h"
+
 #include <atomic>
 #include <functional>
 #include <vector>
@@ -45,7 +47,7 @@ class ControlClient : public juce::InterprocessConnection, private juce::Timer
         explicit ControlClient(AudioSenderProcessor& owner);
         ~ControlClient() override;
 
-        void start(const juce::String& host, double sampleRate, int blockFrames);
+        void start(const juce::String& host, double sampleRate, int blockFrames, int controlPort);
         void stop();
         void selectPlugin(int id);
         void setParameter(int index, float value); // from 0 to 1, SET_PARAM : fire and forget
@@ -76,19 +78,15 @@ class ControlClient : public juce::InterprocessConnection, private juce::Timer
 
         AudioSenderProcessor& processor;
         juce::String nodeHost;
+        int nodeControlPort = DistributedAudio::kControlPort;
         
         // default project sample rate
         double hostSampleRate = 48000.0;
         int hostBlockFrames = 0;
 
-        std::atomic<bool> nodeConnected
-        {
-            false
-        };
-        std::atomic<bool> running
-        {
-            false
-        };
+        std::atomic<bool> nodeConnected { false };
+
+        std::atomic<bool> running { false };
         
         mutable juce::CriticalSection stateLock;
 

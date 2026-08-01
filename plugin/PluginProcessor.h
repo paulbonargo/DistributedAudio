@@ -34,6 +34,10 @@ public:
     void setRemoteLatency(int hostPluginLatencySamples);
     void connectControl(const juce::String& host);
 
+    void setSlot(int newSlot);
+    int getSlot() const noexcept { return slot; }
+    bool isReceiverBound() const noexcept { return receiverThread.isBound(); }
+
     void releaseResources() override;
 
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
@@ -118,7 +122,10 @@ private:
     ControlClient controlClient { *this };
     double lastSampleRate = 48000.0; // default project sample value
     int lastBlockFrames = 0;
+    
     juce::String lastNodeHost = "127.0.0.1";
+    int slot = 0;
+    int lastNumChannels = 2;
 
     std::vector<float> scratchInterleaved; // audio-thread scratch: maxBlock * channels, 
     uint64_t freeRunningPos = 0; // fallback timeline when host gives no playhead
